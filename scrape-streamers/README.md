@@ -1,0 +1,1 @@
+Uses the [fantoccini](https://crates.io/crates/fantoccini) crate to get the top 10,000 streamers for the past 30 days from [twitchtracker](https://twitchtracker.com/channels/ranking) and write the result to a file. This file will be read by the listener to determine which channels to join.

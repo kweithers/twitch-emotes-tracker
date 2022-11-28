@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "scrape-streamers",
+    "twitch-chat-listener"
+]
