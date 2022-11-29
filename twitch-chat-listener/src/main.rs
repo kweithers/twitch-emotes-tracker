@@ -18,7 +18,7 @@ pub async fn main() {
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
-    let redis_client = redis::Client::open("redis://127.0.0.1/").unwrap();
+    let redis_client = redis::Client::open("redis://redis").unwrap();
     let mut redis_con = redis_client.get_connection().unwrap();
 
     // consume incoming Privmsg(s) (standard individual twitch chat messages)
@@ -26,7 +26,6 @@ pub async fn main() {
         while let Some(message) = incoming_messages.recv().await {
             match message {
                 ServerMessage::Privmsg(message) => {
-                    let mut print = false;
                     for token in message.message_text.split(" ") {
                         if emote_set.contains(token) {
                             let key = format!(
@@ -36,17 +35,7 @@ pub async fn main() {
                                 token
                             );
                             let _: () = redis_con.incr(key, 1).unwrap();
-                            print = true;
                         }
-                    }
-                    if print {
-                        println!(
-                            "{} {} - {}: {}",
-                            message.server_timestamp,
-                            message.channel_login,
-                            message.sender.name,
-                            message.message_text
-                        );
                     }
                 }
                 _ => (),
@@ -56,7 +45,6 @@ pub async fn main() {
 
     // join channels
     for channel in streamers.lines() {
-        // assert!(client.join(channel.to_owned()) == Ok(()));
         client.join(channel.to_owned()).unwrap();
     }
 
