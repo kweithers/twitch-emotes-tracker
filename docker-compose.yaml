@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - lognet
+
+  db:
+    build:
+      context: postgres/.
+      dockerfile: Dockerfile
+    environment:
+      - POSTGRES_USER=kmw
+      - POSTGRES_PASSWORD=bald
+    ports:
+      - "5432:5432"
+    volumes:
+      - twitch_db:/var/lib/postgresql/data
+    networks:
+      - lognet
+    
+  twitch-chat-listener:
+    build:
+      context: twitch-chat-listener/.
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ".:/code"
+    depends_on:
+      - redis
+      - db
+    networks:
+      - lognet
+
+networks:
+  lognet:
+    driver: bridge
+
+volumes:
+  twitch_db:
+    driver: local
