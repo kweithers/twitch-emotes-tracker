@@ -17,8 +17,8 @@ services:
       - POSTGRES_PASSWORD=bald
     ports:
       - "5432:5432"
-    volumes:
-      - twitch_db:/var/lib/postgresql/data
+    # volumes:
+      # - twitch_db:/var/lib/postgresql/data
     networks:
       - lognet
     

@@ -1,9 +1,13 @@
+mod db_write;
+
 use redis::Commands;
 use std::collections::HashSet;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::ServerMessage;
 use twitch_irc::TwitchIRCClient;
 use twitch_irc::{ClientConfig, SecureTCPTransport};
+use tokio::time::{sleep, Duration};
+
 #[tokio::main]
 pub async fn main() {
     let streamers = include_str!("streamers.txt"); // Top 10,000 from https://sullygnome.com/channels/365/peakviewers
@@ -20,6 +24,16 @@ pub async fn main() {
 
     let redis_client = redis::Client::open("redis://redis").unwrap();
     let mut redis_con = redis_client.get_connection().unwrap();
+
+    let _postgres_handle = tokio::spawn(async {
+        loop {
+            println!("hi");
+            sleep(Duration::from_secs(20)).await; //just for testing, let it get a bit of data
+            db_write::db_write_and_redis_clear().await.unwrap();
+            println!("done but shouldnt be");
+            sleep(Duration::from_secs(86400)).await;
+        }
+    });
 
     // consume incoming Privmsg(s) (standard individual twitch chat messages)
     let join_handle = tokio::spawn(async move {
