@@ -10,8 +10,8 @@ use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 pub async fn main() {
-    let streamers = include_str!("streamers.txt"); // Top 10,000 from https://sullygnome.com/channels/365/peakviewers
-    let emotes = include_str!("emotes.txt");
+    let streamers = include_str!("streamers_long.txt"); // Top 10,000 from https://sullygnome.com/channels/365/peakviewers
+    let emotes = include_str!("emotes_long.txt");
     let mut emote_set = HashSet::new();
     for emote in emotes.lines() {
         emote_set.insert(emote.to_owned());
@@ -27,8 +27,9 @@ pub async fn main() {
 
     let _postgres_handle = tokio::spawn(async {
         loop {
-            sleep(Duration::from_secs(86400)).await; // Run every 24 hours
+            sleep(Duration::from_secs(60)).await; // Run every 24 hours
             db_write::db_write_and_redis_clear().await.unwrap();
+            sleep(Duration::from_secs(86400)).await; // Run every 24 hours
         }
     });
 
@@ -54,8 +55,9 @@ pub async fn main() {
     });
 
     // join channels
-    for channel in streamers.lines() {
+    for (i,channel) in streamers.lines().enumerate() {
         client.join(channel.to_owned()).unwrap();
+        println!("{}",i);
     }
 
     // keep the tokio executor alive.

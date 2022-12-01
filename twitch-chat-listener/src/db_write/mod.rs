@@ -13,8 +13,8 @@ pub struct TableRow {
 }
 
 pub async fn db_write_and_redis_clear() -> Result<(), Error> {
-    let streamers = include_str!("../streamers.txt");
-    let emotes = include_str!("../emotes.txt");
+    let streamers = include_str!("../streamers_long.txt");
+    let emotes = include_str!("../emotes_long.txt");
 
     let redis_client = redis::Client::open("redis://redis").unwrap();
     let mut redis_con = redis_client.get_connection().unwrap();
@@ -38,19 +38,19 @@ pub async fn db_write_and_redis_clear() -> Result<(), Error> {
     for stream in streamers.lines() {
         for emote in emotes.lines() {
             let key = stream.to_owned() + ":" + emote;
-            let mut val: i32 = 0;
             if let Ok(n) = redis_con.get::<String, redis::Value>(key.to_owned()) {
                 if let Ok(v) = redis::from_redis_value(&n) {
-                    val = v;
+                    if v > 0 {
+                      data.push(TableRow {
+                        streamer: stream.to_owned(),
+                        date: current_date,
+                        emote: emote.to_owned(),
+                        n: v,
+                    });
+                    }
                 }
             }
             redis_con.del::<String, redis::Value>(key.to_owned()).unwrap();
-            data.push(TableRow {
-                streamer: stream.to_owned(),
-                date: current_date,
-                emote: emote.to_owned(),
-                n: val,
-            });
         }
     }
 
