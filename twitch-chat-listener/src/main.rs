@@ -1,12 +1,15 @@
 mod db_write;
 
-use redis::Commands;
+// use redis::Commands;
 use std::collections::HashSet;
+use std::sync::{Arc};
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::ServerMessage;
 use twitch_irc::TwitchIRCClient;
 use twitch_irc::{ClientConfig, SecureTCPTransport};
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration,interval};
+use tokio::sync::{Mutex};
+use multiset::HashMultiSet;
 
 #[tokio::main]
 pub async fn main() {
@@ -22,14 +25,15 @@ pub async fn main() {
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
-    let redis_client = redis::Client::open("redis://redis").unwrap();
-    let mut redis_con = redis_client.get_connection().unwrap();
+    let data = Arc::new(Mutex::new(HashMultiSet::new()));
+    let clone1 = Arc::clone(&data);
 
-    let _postgres_handle = tokio::spawn(async {
+    let _postgres_handle = tokio::spawn(async move {
+        let mut interval = interval(Duration::from_secs(86400)); //24 hrs
+        interval.tick().await; //First tick happens immediately
         loop {
-            sleep(Duration::from_secs(60)).await; // Run every 24 hours
-            db_write::db_write_and_redis_clear().await.unwrap();
-            sleep(Duration::from_secs(86400)).await; // Run every 24 hours
+            interval.tick().await; //Every 24 hrs, write to postgres from redis
+            db_write::set_write(&clone1).await.unwrap();
         }
     });
 
@@ -45,7 +49,7 @@ pub async fn main() {
                                 message.channel_login,
                                 token
                             );
-                            let _: () = redis_con.incr(key, 1).unwrap();
+                            data.lock().await.insert(key);
                         }
                     }
                 }
@@ -55,9 +59,8 @@ pub async fn main() {
     });
 
     // join channels
-    for (i,channel) in streamers.lines().enumerate() {
+    for channel in streamers.lines() {
         client.join(channel.to_owned()).unwrap();
-        println!("{}",i);
     }
 
     // keep the tokio executor alive.
