@@ -27,11 +27,8 @@ pub async fn main() {
 
     let _postgres_handle = tokio::spawn(async {
         loop {
-            println!("hi");
-            sleep(Duration::from_secs(20)).await; //just for testing, let it get a bit of data
+            sleep(Duration::from_secs(86400)).await; // Run every 24 hours
             db_write::db_write_and_redis_clear().await.unwrap();
-            println!("done but shouldnt be");
-            sleep(Duration::from_secs(86400)).await;
         }
     });
 
@@ -43,9 +40,8 @@ pub async fn main() {
                     for token in message.message_text.split(" ") {
                         if emote_set.contains(token) {
                             let key = format!(
-                                "{}:{}:{}",
+                                "{}:{}",
                                 message.channel_login,
-                                message.server_timestamp.format("%Y%m%d"),
                                 token
                             );
                             let _: () = redis_con.incr(key, 1).unwrap();
