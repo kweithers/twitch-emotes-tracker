@@ -1,7 +1,8 @@
 CREATE TABLE emotes (
 	streamer varchar,
-  date DATE,
+  	date DATE,
+	hour INTEGER,
 	emote varchar,
 	n INTEGER,
-	PRIMARY KEY (streamer, date, emote)
+	PRIMARY KEY (streamer, date, hour, emote)
 );

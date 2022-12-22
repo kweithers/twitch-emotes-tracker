@@ -14,6 +14,11 @@ services:
       - twitch_db:/var/lib/postgresql/data
     networks:
       - lognet
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 256M
     
   twitch-chat-listener:
     build:
@@ -27,6 +32,11 @@ services:
       - db
     networks:
       - lognet
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 256M
 
 networks:
   lognet:
